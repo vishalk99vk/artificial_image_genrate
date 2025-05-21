@@ -1,12 +1,9 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import os
 import tempfile
 import zipfile
-import random
-from io import BytesIO
 
-# ---- Utility functions ----
 def unzip_uploaded_zip(uploaded_zip, extract_to):
     with zipfile.ZipFile(uploaded_zip) as z:
         z.extractall(extract_to)
@@ -20,27 +17,19 @@ def find_images_recursively(folder):
                 image_paths.append(os.path.join(root, file))
     return image_paths
 
-# ---- Stub processing functions (replace with your actual logic) ----
-def batch_remove_background_stub(images):
-    st.write(f"Removing backgrounds for {len(images)} images (stub).")
-    # Example: just show the first image
-    if images:
-        img = Image.open(images[0])
-        st.image(img, caption="Example product image")
+def load_and_show_first_image(image_paths, caption):
+    if not image_paths:
+        st.warning("No valid images found.")
+        return
+    try:
+        img_path = image_paths[0]
+        img = Image.open(img_path)
+        st.image(img, caption=f"{caption} - {os.path.basename(img_path)}")
+    except UnidentifiedImageError:
+        st.error(f"Cannot identify image file: {img_path}")
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
 
-def crop_shelf_texture_stub(images):
-    st.write(f"Cropping shelf textures for {len(images)} images (stub).")
-    if images:
-        img = Image.open(images[0])
-        st.image(img, caption="Example shelf texture")
-
-def generate_shelf_stub(products, textures):
-    st.write(f"Generating synthetic shelf with {len(products)} products and {len(textures)} textures (stub).")
-    # Create a blank dummy image for demo
-    img = Image.new("RGB", (800, 600), color=(200, 200, 200))
-    st.image(img, caption="Synthetic Shelf Example")
-
-# ---- Main Streamlit app ----
 def main():
     st.title("Shelf Synthetic Image Generator")
 
@@ -56,7 +45,7 @@ def main():
                 st.write(f"Extracted files/folders: {os.listdir(temp_dir)}")
                 product_images = find_images_recursively(temp_dir)
                 st.write(f"Found product images: {len(product_images)}")
-                batch_remove_background_stub(product_images)
+                load_and_show_first_image(product_images, "Product Image")
 
     elif choice == "Crop Shelf Textures":
         st.header("Crop Shelf Textures")
@@ -67,7 +56,7 @@ def main():
                 st.write(f"Extracted files/folders: {os.listdir(temp_dir)}")
                 shelf_images = find_images_recursively(temp_dir)
                 st.write(f"Found shelf images: {len(shelf_images)}")
-                crop_shelf_texture_stub(shelf_images)
+                load_and_show_first_image(shelf_images, "Shelf Texture")
 
     elif choice == "Generate Synthetic Shelf":
         st.header("Generate Synthetic Shelf")
@@ -80,7 +69,9 @@ def main():
                 product_images = find_images_recursively(prod_dir)
                 shelf_textures = find_images_recursively(tex_dir)
                 st.write(f"Found {len(product_images)} product images and {len(shelf_textures)} shelf textures")
-                generate_shelf_stub(product_images, shelf_textures)
+                # Just show first image of each folder as demo:
+                load_and_show_first_image(product_images, "Product Image")
+                load_and_show_first_image(shelf_textures, "Shelf Texture")
 
 if __name__ == "__main__":
     main()
